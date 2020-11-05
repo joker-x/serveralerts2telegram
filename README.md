@@ -1,12 +1,12 @@
 # serveralerts2telegram
-Bash scripts that send a telegram message if server load raise $LOAD_LIMIT or use of disk space raise $DISK_LIMIT
+Bash scripts that send a telegram message if server load raise $LOAD_LIMIT or use of disk space raise $DISK_LIMIT and attach a file with top and iotop output.
 
 ## Instalation
 
 ```bash
 # Install dependencies
 apt update
-apt install iotop
+apt install coreutils procps curl git iotop
 # Clone repository
 cd /root
 git clone https://github.com/joker-x/serveralerts2telegram.git
