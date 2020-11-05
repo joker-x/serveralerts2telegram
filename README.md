@@ -13,13 +13,12 @@ git clone https://github.com/joker-x/serveralerts2telegram.git
 cd serveralerts2telegram
 # Copy binary
 cp serveralerts2telegram /usr/local/sbin/
-chmod u+x /usr/local/sbin/serveralert2telegram
+chmod u+x /usr/local/sbin/serveralerts2telegram
 # Create log directory
 mkdir /var/log/loadmonitor
 touch /var/log/loadmonitor/load.tsv
 # Activate logrotate
 cp loadmonitor.logrotate /etc/logrotate.d/loadmonitor
-service logrotate restart
 ```
 
 ## Configuration
