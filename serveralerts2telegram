@@ -1,0 +1,95 @@
+#!/bin/bash
+
+#
+# CONFIGURACIÓN:
+# Variables de entorno - valores por defecto
+#
+# Límite de carga puntual. Entero. Por defecto: el número de cores - 2
+LIMIT_LOAD=${LIMIT_LOAD:-$(($(nproc) - 2))}
+# Límite de porcentaje de uso de un punto de montaje. Entero. Por defecto: 90
+LIMIT_DISK=${LIMIT_DISK:-90}
+LOG=${LOG:-/var/log/loadmonitor/load.tsv}
+# Puntos de montaje a revisar
+MOUNT_POINTS=${MOUNT_POINTS}
+# Conexión a bot de telegram y sala destino
+TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+TELEGRA_CHAT_ID=${TELEGRAM_CHAT_ID}
+ADJUNTO="/tmp/$(hostname)-status.txt"
+
+function write2telegram() {
+  MENSAJE="$*"
+  if [[ ! -z ${TELEGRAM_BOT_TOKEN} ]]
+  then
+    curl -s -F parse_mode=HTML \
+     -F chat_id="${TELEGRAM_CHAT_ID}" -F document=@"${ADJUNTO}" -F caption="${MENSAJE}" \
+     https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument?parse_mode=HTML
+  fi
+}
+
+#
+# VERIFICACIONES
+#
+
+[ -z ${TELEGRAM_BOT_TOKEN} ] && echo "ERR: No definido TELEGRAM_BOT_TOKEN" && exit 1
+[ -z ${TELEGRAM_CHAT_ID} ] && echo "ERR: No definido TELEGRAM_CHAT_ID" && exit 1
+
+
+UPTIME=$(uptime)
+LOAD=$(echo "${UPTIME}" | grep -oE '[0-9]+[.,][0-9]+, [0-9]+[.,][0-9]+, [0-9]+[.,][0-9]+')
+LOAD_TAB=$(echo "${LOAD}"  | sed 's/, /\t/g')
+LOAD_PUNTUAL=$(echo "${LOAD}" | tr ',' '\n' | head -n 1)
+DF=$(df -h --sync --total)
+FILTRO_DF=$(echo "${MOUNT_POINTS}" | tr ' ' '|')
+FILTRO_DF=$(echo "${DF}" | grep -E "${FILTRO_DF}" | grep -oE '[0-9]+%' | sed 's/%//g')
+FECHA=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Guardamos log
+[ -f "$LOG" ] && echo -e "${FECHA}\t$(hostname)\t${LOAD_TAB}" >> $LOG
+
+# Comprobamos carga
+MENSAJE_CARGA=""
+if [[ "$LIMIT_LOAD" -le "$LOAD_PUNTUAL" ]];
+then
+  if [[ ! -f "/tmp/cargasuperada" ]];
+  then
+    MENSAJE_CARGA="Ha superado el límite de carga establecido a $LIMIT_LOAD. Carga actual: $LOAD. "
+    echo "$(date +%s)" > /tmp/cargasuperada
+  fi
+else
+  if [[ -f "/tmp/cargasuperada" ]];
+  then
+    MENSAJE_CARGA="Vuelve a estar por debajo del límite de carga establecido a $LIMIT_LOAD. Carga actual: $LOAD. "
+    rm /tmp/cargasuperada
+  fi
+fi
+
+# Comprobamos uso de disco
+MENSAJE_DISCO=""
+for USO in $FILTRO_DF
+do
+  if [[ "LIMIT_DISK" -le "$USO" ]];
+  then
+    MENSAJE_DISCO="Ha superado el límite de uso de disco establecido a ${LIMIT_DISK}%."
+    [[ ! -f "/tmp/discosuperado" ]] && echo "$(date +%s)" > /tmp/discosuperado
+    break
+  fi
+done
+
+if [[ -z "$MENSAJE_DISCO" && -f "/tmp/discosuperado" ]];
+then
+  MENSAJE_DISCO="Vuelve a estar por debajo del límite de uso de disco establecido a ${LIMIT_DISK}%."
+  rm /tmp/discosuperado
+fi
+
+MENSAJE="${MENSAJE_CARGA}${MENSAJE_DISCO}"
+if [[ ! -z "$MENSAJE" ]];
+then
+  # Creamos archivo de ADJUNTO
+  TOP=$(top -bn 1)
+  IOTOP=$(iotop -botn 1)
+  echo -e "UPTIME:\n$UPTIME\n\nDF:\n$DF\n\nIOTOP:\n$IOTOP\n\nTOP:\n$TOP\n" > $ADJUNTO
+  # Enviamos mensaje por Telegram
+  write2telegram "#$(hostname) $MENSAJE"
+fi
+
+

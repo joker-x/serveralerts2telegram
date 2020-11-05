@@ -1,0 +1,14 @@
+# Instalación:
+# ------------
+# mkdir /var/log/loadmonitor
+# cp loadmonitor.logrotate /etc/logrotate.d/loadmonitor
+# touch /var/log/loadmonitor/load.tsv
+
+/var/log/loadmonitor/load.tsv {
+  weekly
+  rotate 52
+  compress
+  missingok
+  notifempty
+}
+
