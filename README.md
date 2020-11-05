@@ -26,7 +26,8 @@ service logrotate restart
 
 All options can be set with environment variables. Only two are required:
 
-**TELEGRAM_BOT_TOKEN** 
+**TELEGRAM_BOT_TOKEN**
+
 **TELEGRAM_CHAT_ID**
 
 To obtain, you need to:
