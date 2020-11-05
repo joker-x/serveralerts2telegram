@@ -46,3 +46,19 @@ Integer. If percent of use of a partition is greater than LIMIT_DISK. By default
 String (path). Only test the partitions with contain MOUNT_POINTS
 
 
+## Cron activation
+
+Add this line to /etc/crontab to execute every 5 minutes:
+
+```
+*/5 * * * * root TELEGRAM_BOT_TOKEN= TELEGRAM_CHAT_ID= LIMIT_LOAD= LIMIT_DISK= MOUNT_POINTS= /usr/local/sbin/serveralerts2telegram >/dev/null 2>&1
+```
+
+## Update
+
+```
+cd /root/serveralerts2telegram
+git pull origin main
+cp serveralerts2telegram /usr/local/sbin/
+```
+
