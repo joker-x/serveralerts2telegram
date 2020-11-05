@@ -13,7 +13,8 @@ LOG=${LOG:-/var/log/loadmonitor/load.tsv}
 MOUNT_POINTS=${MOUNT_POINTS}
 # Conexión a bot de telegram y sala destino
 TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-TELEGRA_CHAT_ID=${TELEGRAM_CHAT_ID}
+TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+TELEGRAM_LANG=${TELEGRAM_LANG:-es}
 ADJUNTO="/tmp/$(hostname)-status.txt"
 
 function write2telegram() {
@@ -23,6 +24,42 @@ function write2telegram() {
     curl -s -F parse_mode=HTML \
      -F chat_id="${TELEGRAM_CHAT_ID}" -F document=@"${ADJUNTO}" -F caption="${MENSAJE}" \
      https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument?parse_mode=HTML
+  fi
+}
+
+function translateLimitLoadUp() {
+  if [[ "$TELEGRAM_LANG" == "en" ]]
+  then
+    echo "Load limit set to $1 have been raised. Now: $2. "
+  else
+    echo "Ha superado el límite de carga establecido a $1. Carga actual: $2. "
+  fi
+}
+
+function translateLimitLoadDown() {
+  if [[ "$TELEGRAM_LANG" == "en" ]]
+  then
+    echo "Load limit is under $1 again. Now: $2. "
+  else
+    echo "Vuelve a estar por debajo del límite de carga establecido a $1. Carga actual: $2. "
+  fi
+}
+
+function translateLimitDiskUp() {
+  if [[ "$TELEGRAM_LANG" == "en" ]]
+  then
+    echo "Disk use limit set to $1 have been raised."
+  else
+    echo "Ha superado el límite de uso de disco establecido a $1%."
+  fi
+}
+
+function translateLimitDiskDown() {
+  if [[ "$TELEGRAM_LANG" == "en" ]]
+  then
+    echo "Disk use limit is under $1% again."
+  else
+    echo "Vuelve a estar por debajo del límite de uso de disco establecido a $1%."
   fi
 }
 
@@ -52,13 +89,13 @@ if [[ "$LIMIT_LOAD" -le "$LOAD_PUNTUAL" ]];
 then
   if [[ ! -f "/tmp/cargasuperada" ]];
   then
-    MENSAJE_CARGA="Ha superado el límite de carga establecido a $LIMIT_LOAD. Carga actual: $LOAD. "
+    MENSAJE_CARGA=$(translateLimitLoadUp "$LIMIT_LOAD" "$LOAD")
     echo "$(date +%s)" > /tmp/cargasuperada
   fi
 else
   if [[ -f "/tmp/cargasuperada" ]];
   then
-    MENSAJE_CARGA="Vuelve a estar por debajo del límite de carga establecido a $LIMIT_LOAD. Carga actual: $LOAD. "
+    MENSAJE_CARGA=$(translateLimitLoadDown "$LIMIT_LOAD" "$LOAD")
     rm /tmp/cargasuperada
   fi
 fi
@@ -69,7 +106,7 @@ for USO in $FILTRO_DF
 do
   if [[ "LIMIT_DISK" -le "$USO" ]];
   then
-    MENSAJE_DISCO="Ha superado el límite de uso de disco establecido a ${LIMIT_DISK}%."
+    MENSAJE_DISCO=$(translateLimitDiskUp "$LIMIT_DISK")
     [[ ! -f "/tmp/discosuperado" ]] && echo "$(date +%s)" > /tmp/discosuperado
     break
   fi
@@ -77,7 +114,7 @@ done
 
 if [[ -z "$MENSAJE_DISCO" && -f "/tmp/discosuperado" ]];
 then
-  MENSAJE_DISCO="Vuelve a estar por debajo del límite de uso de disco establecido a ${LIMIT_DISK}%."
+  MENSAJE_DISCO=$(translateLimitDiskDown "$LIMIT_DISK")
   rm /tmp/discosuperado
 fi
 
