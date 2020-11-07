@@ -111,7 +111,7 @@ CLEANCRON=$(grep -v serveralerts2telegram /etc/crontab)
 echo -e "$CLEANCRON" > /etc/crontab
 
 # Add new configuration
-echo "# serveralerts2telegram update at $(date)" >> /etc/crontab
+echo -e "\n\n# serveralerts2telegram update at $(date)" >> /etc/crontab
 echo "$CRONENTRY" >> /etc/crontab
 
 echo "serveralerts2telegram installed successfull"
