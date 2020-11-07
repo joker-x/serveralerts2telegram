@@ -1,11 +1,20 @@
 # serveralerts2telegram
-Bash scripts that send a telegram message if server load raise $LOAD_LIMIT or use of disk space raise $DISK_LIMIT and attach a file with top and iotop output.
+
+Every 5 minutes check the available disk space and server load. If any of them raise $LOAD_LIMIT or $DISK_LIMIT, your Telegram Bot send an alert to $TELEGRAM_CHAT_ID. When return under the limits send another message.
+
+All Telegram messages attach a file with uptime, df, top and iotop output.
+
+Also save a load log in /var/log/loadmonitor/$(hostname).tsv that rotate every week for a year.
+
+**Simple, usefull, light and write in pure bash!**
+
 
 ## Instalation with interactive script
 
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/joker-x/serveralerts2telegram/main/INSTALL.bash)
 ```
+
 
 ## Configuration
 
@@ -26,20 +35,12 @@ To obtain, you need to:
 Integer. If puntual server load is greater than LIMIT_LOAD send an alert. By default, the number of cores minus 2.
 
 **LIMIT_DISK**
-Integer. If percent of use of a partition is greater than LIMIT_DISK. By default, 90 and test all mounted partitions.
+Integer. If percent of use of a partition is greater than LIMIT_DISK send an alert. By default, 90 and test all mounted partitions.
 
 **MOUNT_POINTS**
-String (path). Only test the partitions with contain MOUNT_POINTS.
+String (path). Only test the partitions with contain MOUNT_POINTS. You can set more than one mount point with space or | separator. Example: MOUNT_POINT="/dev/sda1|/dev/sda2"
 
 **TELEGRAM_LANG**
-String. Only implements 'es' for Spanish (default value) and 'en' for English.
-
-## Cron activation
-
-Add this line to /etc/crontab to execute every 5 minutes:
-
-```
-*/5 * * * * root TELEGRAM_BOT_TOKEN= TELEGRAM_CHAT_ID= LIMIT_LOAD= LIMIT_DISK= MOUNT_POINTS= TELEGRAM_LANG= /usr/local/sbin/serveralerts2telegram >/dev/null 2>&1
-```
+String. Set the language of the telegram bot alerts. Now, only implements 'es' for Spanish (default value) and 'en' for English.
 
 
