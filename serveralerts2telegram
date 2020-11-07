@@ -8,14 +8,18 @@
 LIMIT_LOAD=${LIMIT_LOAD:-$(($(nproc) - 2))}
 # Límite de porcentaje de uso de un punto de montaje. Entero. Por defecto: 90
 LIMIT_DISK=${LIMIT_DISK:-90}
-LOG=${LOG:-/var/log/loadmonitor/load.tsv}
 # Puntos de montaje a revisar
 MOUNT_POINTS=${MOUNT_POINTS}
 # Conexión a bot de telegram y sala destino
 TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
 TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
 TELEGRAM_LANG=${TELEGRAM_LANG:-es}
+
+# Constantes
+LOG="/var/log/loadmonitor/$(hostname).tsv"
 ADJUNTO="/tmp/$(hostname)-status.txt"
+LOAD_RAISE="/tmp/serveralerts2telegram-load-raise"
+DISK_RAISE="/tmp/serveralerts2telegram-disk-raise"
 
 function write2telegram() {
   MENSAJE="$*"
@@ -48,27 +52,27 @@ function translateLimitLoadDown() {
 function translateLimitDiskUp() {
   if [[ "$TELEGRAM_LANG" == "en" ]]
   then
-    echo "Disk use limit set to $1 have been raised."
+    echo "Disk $MOUNT_POINTS use limit set to $1% have been raised."
   else
-    echo "Ha superado el límite de uso de disco establecido a $1%."
+    echo "Ha superado el límite de uso de disco $MOUNT_POINTS establecido a $1%."
   fi
 }
 
 function translateLimitDiskDown() {
   if [[ "$TELEGRAM_LANG" == "en" ]]
   then
-    echo "Disk use limit is under $1% again."
+    echo "Disk $MOUNT_POINTS use limit is under $1% again."
   else
-    echo "Vuelve a estar por debajo del límite de uso de disco establecido a $1%."
+    echo "Vuelve a estar por debajo del límite de uso de disco $MOUNT_POINTS establecido a $1%."
   fi
 }
 
 #
 # VERIFICACIONES
 #
-
-[ -z ${TELEGRAM_BOT_TOKEN} ] && echo "ERR: No definido TELEGRAM_BOT_TOKEN" && exit 1
-[ -z ${TELEGRAM_CHAT_ID} ] && echo "ERR: No definido TELEGRAM_CHAT_ID" && exit 1
+[ "$(id -u)" != "0" ] && echo "ERR: This script must be run as root" && exit 1
+[ -z ${TELEGRAM_BOT_TOKEN} ] && echo "ERR: TELEGRAM_BOT_TOKEN not defined" && exit 1
+[ -z ${TELEGRAM_CHAT_ID} ] && echo "ERR: TELEGRAM_CHAT_ID not defined" && exit 1
 
 
 UPTIME=$(uptime)
@@ -87,16 +91,16 @@ FECHA=$(date '+%Y-%m-%d %H:%M:%S')
 MENSAJE_CARGA=""
 if [[ "$LIMIT_LOAD" -le "$LOAD_PUNTUAL" ]];
 then
-  if [[ ! -f "/tmp/cargasuperada" ]];
+  if [[ ! -f "$LOAD_RAISE" ]];
   then
     MENSAJE_CARGA=$(translateLimitLoadUp "$LIMIT_LOAD" "$LOAD")
-    echo "$(date +%s)" > /tmp/cargasuperada
+    echo "$(date +%s)" > "$LOAD_RAISE"
   fi
 else
-  if [[ -f "/tmp/cargasuperada" ]];
+  if [[ -f "$LOAD_RAISE" ]];
   then
     MENSAJE_CARGA=$(translateLimitLoadDown "$LIMIT_LOAD" "$LOAD")
-    rm /tmp/cargasuperada
+    rm "$LOAD_RAISE"
   fi
 fi
 
@@ -104,18 +108,23 @@ fi
 MENSAJE_DISCO=""
 for USO in $FILTRO_DF
 do
-  if [[ "LIMIT_DISK" -le "$USO" ]];
+  if [[ "$LIMIT_DISK" -le "$USO" ]];
   then
     MENSAJE_DISCO=$(translateLimitDiskUp "$LIMIT_DISK")
-    [[ ! -f "/tmp/discosuperado" ]] && echo "$(date +%s)" > /tmp/discosuperado
+    [[ ! -f "$DISK_RAISE" ]] && echo "$(date +%s)" > "$DISK_RAISE"
     break
   fi
 done
 
-if [[ -z "$MENSAJE_DISCO" && -f "/tmp/discosuperado" ]];
+if [[ -f "$DISK_RAISE" ]];
 then
-  MENSAJE_DISCO=$(translateLimitDiskDown "$LIMIT_DISK")
-  rm /tmp/discosuperado
+  if [[ -z "$MENSAJE_DISCO" ]]
+  then
+    MENSAJE_DISCO=$(translateLimitDiskDown "$LIMIT_DISK")
+    rm "$DISK_RAISE"
+  else
+    MENSAJE_DISCO=""
+  fi
 fi
 
 MENSAJE="${MENSAJE_CARGA}${MENSAJE_DISCO}"
@@ -128,5 +137,4 @@ then
   # Enviamos mensaje por Telegram
   write2telegram "#$(hostname) $MENSAJE"
 fi
-
 

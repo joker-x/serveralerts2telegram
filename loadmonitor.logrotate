@@ -4,7 +4,7 @@
 # cp loadmonitor.logrotate /etc/logrotate.d/loadmonitor
 # touch /var/log/loadmonitor/load.tsv
 
-/var/log/loadmonitor/load.tsv {
+/var/log/loadmonitor/*.tsv {
   weekly
   rotate 52
   compress

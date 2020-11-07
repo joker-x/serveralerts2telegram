@@ -6,7 +6,7 @@ Bash scripts that send a telegram message if server load raise $LOAD_LIMIT or us
 ```bash
 # Install dependencies
 apt update
-apt install coreutils procps curl git iotop
+apt install coreutils procps logrotate iotop curl git
 # Clone repository
 cd /root
 git clone https://github.com/joker-x/serveralerts2telegram.git
