@@ -38,9 +38,12 @@ Integer. If puntual server load is greater than LIMIT_LOAD send an alert. By def
 Integer. If percent of use of a partition is greater than LIMIT_DISK send an alert. By default, 90 and test all mounted partitions.
 
 **MOUNT_POINTS**
-String (path). Only test the partitions with contain MOUNT_POINTS. You can set more than one mount point with space or | separator. Example: MOUNT_POINT="/dev/sda1|/dev/sda2"
+String (path). Only test the partitions with contain MOUNT_POINTS. You can set more than one mount point with space or | separator. Example: MOUNT_POINTS="/dev/sda1|/dev/sda2" or MOUNT_POINTS="/dev/sda1 /dev/sda2"
 
 **TELEGRAM_LANG**
 String. Set the language of the telegram bot alerts. Now, only implements 'es' for Spanish (default value) and 'en' for English.
 
+## loadlog2html
+
+This script generate a google timeline chart with load log. If set HTML_FILE environmet variable in a path inside document root of webserver, you can see online.
 

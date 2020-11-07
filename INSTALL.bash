@@ -51,13 +51,16 @@ then
   installDependencies
   [ $? -gt 0 ] && echo "ERR: Install dependencies failed" && exit 1
 
-  echo "2. Download script"
+  echo "2. Download scripts"
   curl -so "/usr/local/sbin/serveralerts2telegram" "https://raw.githubusercontent.com/joker-x/serveralerts2telegram/main/serveralerts2telegram"
   chmod u+x /usr/local/sbin/serveralerts2telegram
+  curl -so "/usr/local/bin/loadlog2html" "https://raw.githubusercontent.com/joker-x/serveralerts2telegram/main/loadlog2html"
+  chmod +x /usr/local/sbin/loadlog2html
 
   echo "3. Create log files"
   mkdir -p /var/log/loadmonitor
   touch "/var/log/loadmonitor/$(hostname).tsv"
+  curl -so "/var/log/loadmonitor/loadmonitor.template" "https://raw.githubusercontent.com/joker-x/serveralerts2telegram/main/loadmonitor.template"
   curl -so "/etc/logrotate.d/loadmonitor" "https://raw.githubusercontent.com/joker-x/serveralerts2telegram/main/loadmonitor.logrotate"
 
   echo "4. Configuration"
