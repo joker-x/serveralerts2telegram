@@ -60,7 +60,6 @@ then
   echo "3. Create log files"
   mkdir -p /var/log/loadmonitor
   touch "/var/log/loadmonitor/$(hostname).tsv"
-  curl -so "/var/log/loadmonitor/loadmonitor.template" "https://raw.githubusercontent.com/joker-x/serveralerts2telegram/main/loadmonitor.template"
   curl -so "/etc/logrotate.d/loadmonitor" "https://raw.githubusercontent.com/joker-x/serveralerts2telegram/main/loadmonitor.logrotate"
 
   echo "4. Configuration"

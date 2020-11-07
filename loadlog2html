@@ -1,11 +1,8 @@
 #!/bin/bash
 
-#TEMPLATE_FILE=${TEMPLATE_FILE:-"/var/log/loadmonitor/loadmonitor.template"}
 HTML_FILE=${HTML_FILE:-"/var/log/loadmonitor/$(hostname).html"}
-LOGS=$(cat /var/log/loadmonitor/*.tsv | zcat /var/log/loadmonitor/*.tsv*gz)
+LOGS=$(cat /var/log/loadmonitor/*.tsv | zcat /var/log/loadmonitor/*.tsv*gz | sort)
 
-#sed "s/%%%HOSTNAME%%%/$(hostname)/g" $TEMPLATE_FILE | \
-#sed "s/%%%LOADLOG%%%/${LOGS}/g" > $HTML_FILE
 
 cat > $HTML_FILE << FIN
 <!DOCTYPE html>
