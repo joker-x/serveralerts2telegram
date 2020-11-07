@@ -55,7 +55,7 @@ then
   curl -so "/usr/local/sbin/serveralerts2telegram" "https://raw.githubusercontent.com/joker-x/serveralerts2telegram/main/serveralerts2telegram"
   chmod u+x /usr/local/sbin/serveralerts2telegram
   curl -so "/usr/local/bin/loadlog2html" "https://raw.githubusercontent.com/joker-x/serveralerts2telegram/main/loadlog2html"
-  chmod +x /usr/local/sbin/loadlog2html
+  chmod +x /usr/local/bin/loadlog2html
 
   echo "3. Create log files"
   mkdir -p /var/log/loadmonitor

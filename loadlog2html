@@ -1,9 +1,82 @@
 #!/bin/bash
 
-TEMPLATE_FILE=${TEMPLATE_FILE:-"/var/log/loadmonitor/loadmonitor.template"}
+#TEMPLATE_FILE=${TEMPLATE_FILE:-"/var/log/loadmonitor/loadmonitor.template"}
 HTML_FILE=${HTML_FILE:-"/var/log/loadmonitor/$(hostname).html"}
 LOGS=$(cat /var/log/loadmonitor/*.tsv | zcat /var/log/loadmonitor/*.tsv*gz)
 
-sed "s/%%%HOSTNAME%%%/$(hostname)/g" $TEMPLATE_FILE | \
-sed "s/%%%LOADLOG%%%/${LOGS}/g" > $HTML_FILE
+#sed "s/%%%HOSTNAME%%%/$(hostname)/g" $TEMPLATE_FILE | \
+#sed "s/%%%LOADLOG%%%/${LOGS}/g" > $HTML_FILE
+
+cat > $HTML_FILE << FIN
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Load monitor: $(hostname)</title>
+
+    <script type='text/javascript' src='https://www.gstatic.com/charts/loader.js'></script>
+
+    <style>
+
+      html,body,#grafico {
+        margin:0;
+        padding:0;
+        border:0;
+        width:100%;
+        height:98%;
+      }
+      #grafico {
+        margin:1% auto;
+        width:95%;
+        height:98%;
+      }
+      textarea {
+        display:none;
+      }
+
+    </style>
+
+  </head>
+  <body>
+
+    <div id="grafico"></div>
+
+    <textarea id="loadlog">${LOGS}</textarea>
+
+    <script>
+      function toFloat(str) {
+        return parseFloat(str.split(',').join('.'));
+      }
+
+      function buildRows() {
+        var log = document.getElementById('loadlog').value.split('\n');
+        var result = [];
+        for (var i=0; i<log.length; i++) {
+          var line = log[i].split('\t');
+          if (line.length == 5) {
+            result.push ([new Date(line[0]), toFloat(line[2]), toFloat(line[3]), toFloat(line[4])]); 
+          }
+        }
+        return result;
+      }
+
+      google.charts.load('current', {'packages':['annotatedtimeline']});
+      google.charts.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('datetime', 'Timestamp');
+        data.addColumn('number', 'Load 1 min');
+        data.addColumn('number', 'Load 5 min');
+        data.addColumn('number', 'Load 15 min');
+        data.addRows(buildRows());
+        
+        var chart = new google.visualization.AnnotatedTimeLine(document.getElementById('grafico'));
+        chart.draw(data, {displayAnnotations: true});
+      }
+    </script>
+
+  </body>
+</html>
+FIN
 
